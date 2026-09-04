@@ -14,3 +14,11 @@ android {
         versionName = "1.0"
     }
 }
+
+repositories {
+    maven(url = "https://jitpack.io")
+}
+
+dependencies {
+    implementation("com.github.ankidroid:Anki-Android:api-v1.1.0")
+}
