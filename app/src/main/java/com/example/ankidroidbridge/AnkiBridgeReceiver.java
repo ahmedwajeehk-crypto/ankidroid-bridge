@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
-import android.widget.Toast;
 
 public class AnkiBridgeReceiver extends BroadcastReceiver {
 
@@ -14,6 +12,9 @@ public class AnkiBridgeReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
 
         String taxonomyId = intent.getStringExtra("taxonomy_id");
+
+        String status;
+        String details;
 
         try {
             Uri modelsUri =
@@ -34,19 +35,24 @@ public class AnkiBridgeReceiver extends BroadcastReceiver {
                 cursor.close();
             }
 
-            String message =
-                    "Anki access SUCCESS. Models found: " + count
-                    + " | taxonomy_id=" + taxonomyId;
-
-            Log.e("ANKI_BRIDGE", message);
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            status = "success";
+            details = "Models found: " + count;
 
         } catch (Exception e) {
-
-            String message = "ANKI ERROR: " + e.toString();
-
-            Log.e("ANKI_BRIDGE", message);
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            status = "error";
+            details = e.toString();
         }
+
+        Intent reply = new Intent(
+                "com.example.ankidroidbridge.ANKI_RESULT"
+        );
+
+        reply.setPackage("com.arlosoft.macrodroid");
+
+        reply.putExtra("taxonomy_id", taxonomyId);
+        reply.putExtra("status", status);
+        reply.putExtra("details", details);
+
+        context.sendBroadcast(reply);
     }
 }
