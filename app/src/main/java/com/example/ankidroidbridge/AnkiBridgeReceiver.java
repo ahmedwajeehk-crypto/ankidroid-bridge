@@ -3,56 +3,60 @@ package com.example.ankidroidbridge;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
+
+import com.ichi2.anki.api.AddContentApi;
+
+import java.util.Map;
 
 public class AnkiBridgeReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        String taxonomyId = intent.getStringExtra("taxonomy_id");
-
-        String status;
-        String details;
-
         try {
-            Uri modelsUri =
-                    Uri.parse("content://com.ichi2.anki.flashcards/models");
+            String front = intent.getStringExtra("front");
+            String back = intent.getStringExtra("back");
 
-            Cursor cursor = context.getContentResolver().query(
-                    modelsUri,
-                    null,
-                    null,
-                    null,
+            AddContentApi api = new AddContentApi(context);
+
+            Map<Long, String> decks = api.getDeckList();
+            Map<Long, String> models = api.getModelList();
+
+            Long deckId = null;
+            Long modelId = null;
+
+            for (Map.Entry<Long, String> entry : decks.entrySet()) {
+                if (entry.getValue().equalsIgnoreCase("Default")) {
+                    deckId = entry.getKey();
+                    break;
+                }
+            }
+
+            for (Map.Entry<Long, String> entry : models.entrySet()) {
+                if (entry.getValue().equalsIgnoreCase("Basic")) {
+                    modelId = entry.getKey();
+                    break;
+                }
+            }
+
+            if (deckId == null || modelId == null) {
+                return;
+            }
+
+            String[] fields = new String[]{
+                    front,
+                    back
+            };
+
+            api.addNote(
+                    deckId,
+                    modelId,
+                    fields,
                     null
             );
 
-            int count = 0;
-
-            if (cursor != null) {
-                count = cursor.getCount();
-                cursor.close();
-            }
-
-            status = "success";
-            details = "Models found: " + count;
-
         } catch (Exception e) {
-            status = "error";
-            details = e.toString();
+            e.printStackTrace();
         }
-
-        Intent reply = new Intent(
-                "com.example.ankidroidbridge.ANKI_RESULT"
-        );
-
-        reply.setPackage("com.arlosoft.macrodroid");
-
-        reply.putExtra("taxonomy_id", taxonomyId);
-        reply.putExtra("status", status);
-        reply.putExtra("details", details);
-
-        context.sendBroadcast(reply);
     }
 }
